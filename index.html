@@ -1,832 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RSA Flashcards</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #f5f3ee;
-    --surface: #ffffff;
-    --surface2: #eef0f7;
-    --border: #dddad3;
-    --border2: #c8c4bc;
-    --text: #1e1c18;
-    --text2: #4a4740;
-    --text3: #8c8880;
-    --accent: #4a3fcf;
-    --accent2: #6257e8;
-    --accent-dim: rgba(74,63,207,0.08);
-    --accent-glow: rgba(74,63,207,0.18);
-    --gold: #8a6a1a;
-    --gold-dim: rgba(138,106,26,0.1);
-    --green: #1e7a4a;
-    --green-dim: rgba(30,122,74,0.1);
-    --red: #b03030;
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Subtle warm background texture */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(74,63,207,0.04) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(30,122,74,0.03) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  header {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 3.5rem 2rem 2rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .header-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-
-  header h1 {
-    font-family: 'Instrument Serif', serif;
-    font-size: clamp(2.2rem, 5vw, 3.5rem);
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    color: var(--text);
-  }
-
-  header h1 em {
-    font-style: italic;
-    color: var(--accent2);
-  }
-
-  .header-sub {
-    font-size: 14px;
-    color: var(--text2);
-    margin-top: 0.75rem;
-    font-weight: 300;
-  }
-
-  .stats-bar {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1.5rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--text3);
-  }
-
-  .stats-bar span { color: var(--text2); }
-
-  /* Controls */
-  .controls {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 1.25rem 2rem;
-    border-bottom: 1px solid var(--border);
-    background: rgba(245,243,238,0.92);
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .filter-pills {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .pill {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    padding: 5px 14px;
-    border-radius: 20px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .pill:hover { border-color: var(--accent); color: var(--accent2); }
-  .pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
-
-  .right-controls { display: flex; gap: 8px; align-items: center; }
-
-  .ctrl-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 5px 14px;
-    border-radius: 6px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .ctrl-btn:hover { background: var(--border); color: var(--text); }
-
-  /* Grid */
-  .grid {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.25rem;
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  /* Card */
-  .card-wrap {
-    perspective: 1000px;
-    height: 270px;
-    cursor: pointer;
-  }
-
-  .card-wrap.hidden { display: none; }
-
-  .card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .card-wrap.flipped .card-inner {
-    transform: rotateY(180deg);
-  }
-
-  .card-face {
-    position: absolute;
-    inset: 0;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-
-  .card-wrap:hover .card-face { border-color: var(--border2); }
-
-  .card-front { background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05); }
-  .card-back {
-    background: var(--surface2);
-    transform: rotateY(180deg);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
-  }
-
-  /* Category accent line */
-  .card-face::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    border-radius: 12px 12px 0 0;
-  }
-
-  .cat-fundamentals .card-face::before { background: var(--accent); }
-  .cat-keys .card-face::before { background: var(--gold); }
-  .cat-math .card-face::before { background: var(--green); }
-  .cat-security .card-face::before { background: var(--red); }
-  .cat-equations .card-face::before { background: var(--accent2); }
-
-  .card-category {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-    font-weight: 500;
-  }
-
-  .cat-fundamentals .card-category { color: var(--accent); }
-  .cat-keys .card-category { color: var(--gold); }
-  .cat-math .card-category { color: var(--green); }
-  .cat-security .card-category { color: var(--red); }
-  .cat-equations .card-category { color: var(--accent2); }
-
-  .card-number {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text3);
-    position: absolute;
-    bottom: 1rem;
-    right: 1.25rem;
-  }
-
-  .card-question {
-    font-family: 'Instrument Serif', serif;
-    font-size: 1.1rem;
-    line-height: 1.45;
-    color: var(--text);
-    flex: 1;
-    display: flex;
-    align-items: center;
-  }
-
-  .card-hint {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text3);
-    margin-top: 0.75rem;
-    letter-spacing: 0.05em;
-  }
-
-  /* Back face */
-  .card-answer {
-    font-size: 13px;
-    line-height: 1.65;
-    color: var(--text2);
-    flex: 1;
-    display: flex;
-    align-items: center;
-  }
-
-  .card-answer code {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--accent2);
-    background: var(--accent-dim);
-    padding: 1px 6px;
-    border-radius: 4px;
-  }
-
-  .card-answer .eq {
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    color: var(--text);
-    background: #f0eee8;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    margin: 6px 0;
-    display: block;
-    letter-spacing: 0.02em;
-  }
-
-  .card-answer .highlight { color: var(--gold); font-weight: 500; }
-  .card-answer .good { color: var(--green); }
-
-  .flip-hint {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text3);
-    letter-spacing: 0.08em;
-    text-align: center;
-    margin-bottom: 0.4rem;
-  }
-
-  /* progress bar on back */
-  .card-back .card-category { color: var(--text3); }
-
-  /* Rating buttons */
-  .rating-row {
-    display: flex;
-    gap: 6px;
-    margin-top: auto;
-    padding-top: 0.5rem;
-  }
-
-  .rating-btn {
-    flex: 1;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    padding: 6px 4px;
-    border-radius: 6px;
-    border: 1px solid;
-    cursor: pointer;
-    transition: all 0.18s;
-    font-weight: 500;
-  }
-
-  .rating-btn.good {
-    border-color: #b8ddc8;
-    background: #edf7f1;
-    color: var(--green);
-  }
-  .rating-btn.good:hover, .rating-btn.good.selected {
-    background: var(--green);
-    color: #fff;
-    border-color: var(--green);
-  }
-
-  .rating-btn.neutral {
-    border-color: #d0cebc;
-    background: #f5f3eb;
-    color: var(--text2);
-  }
-  .rating-btn.neutral:hover, .rating-btn.neutral.selected {
-    background: #9a917a;
-    color: #fff;
-    border-color: #9a917a;
-  }
-
-  .rating-btn.review {
-    border-color: #f0c4c4;
-    background: #fdf0f0;
-    color: var(--red);
-  }
-  .rating-btn.review:hover, .rating-btn.review.selected {
-    background: var(--red);
-    color: #fff;
-    border-color: var(--red);
-  }
-
-  /* Score badge on card front */
-  .score-badge {
-    position: absolute;
-    top: 0.7rem; right: 0.7rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 20px;
-    line-height: 1.6;
-  }
-  .score-badge.good  { background: #edf7f1; color: var(--green); border: 1px solid #b8ddc8; }
-  .score-badge.neutral { background: #f5f3eb; color: var(--text2); border: 1px solid #d0cebc; }
-  .score-badge.review { background: #fdf0f0; color: var(--red); border: 1px solid #f0c4c4; }
-
-  /* Review table section */
-  .review-section {
-    position: relative;
-    z-index: 1;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem 3rem;
-  }
-
-  .review-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 0 1rem;
-    border-top: 1px solid var(--border);
-    margin-top: 0.5rem;
-  }
-
-  .review-section-title {
-    font-family: 'Instrument Serif', serif;
-    font-size: 1.4rem;
-    font-weight: 400;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .review-count-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    background: #fdf0f0;
-    color: var(--red);
-    border: 1px solid #f0c4c4;
-    padding: 2px 10px;
-    border-radius: 20px;
-  }
-
-  .score-summary {
-    display: flex;
-    gap: 1.5rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-  }
-  .score-summary .s-good  { color: var(--green); }
-  .score-summary .s-neut  { color: var(--text2); }
-  .score-summary .s-rev   { color: var(--red); }
-  .score-summary .s-total { color: var(--accent2); font-weight: 500; }
-
-  .review-empty {
-    text-align: center;
-    padding: 2.5rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--text3);
-    border: 1px dashed var(--border2);
-    border-radius: 10px;
-    background: var(--surface);
-  }
-
-  .review-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    background: var(--surface);
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-
-  .review-table thead tr {
-    background: #f0eee8;
-  }
-
-  .review-table th {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    color: var(--text2);
-    text-align: left;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    text-transform: uppercase;
-  }
-
-  .review-table td {
-    padding: 11px 16px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-    color: var(--text2);
-    line-height: 1.5;
-  }
-
-  .review-table tr:last-child td { border-bottom: none; }
-  .review-table tr:hover td { background: #fdf8f4; }
-
-  .review-table .td-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text3);
-    width: 40px;
-  }
-
-  .review-table .td-cat {
-    width: 110px;
-  }
-
-  .review-table .td-score {
-    width: 70px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--red);
-    text-align: center;
-  }
-
-  .cat-pill {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    letter-spacing: 0.05em;
-  }
-  .cat-pill.fundamentals { background: rgba(74,63,207,0.08); color: var(--accent); }
-  .cat-pill.math         { background: rgba(30,122,74,0.08);  color: var(--green); }
-  .cat-pill.equations    { background: rgba(98,87,232,0.08);  color: var(--accent2); }
-  .cat-pill.keys         { background: rgba(138,106,26,0.08); color: var(--gold); }
-  .cat-pill.security     { background: rgba(176,48,48,0.08);  color: var(--red); }
-
-  /* Footer */
-  footer {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 2rem;
-    border-top: 1px solid var(--border);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text3);
-    letter-spacing: 0.05em;
-  }
-
-  /* Entrance animation */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .card-wrap {
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .no-results {
-    grid-column: 1/-1;
-    text-align: center;
-    padding: 4rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--text3);
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Science Topics</title>
+    
+    <!-- Material Design Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- MathJax for LaTeX rendering -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>Computer Science Topics</h1>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <span class="material-icons">visibility</span>
+                        <span id="viewedCount">0</span>/<span id="totalCards">24</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="material-icons">refresh</span>
+                        <button class="reset-btn" onclick="resetProgress()">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-<header>
-  <div class="header-label">Cryptography Study Kit</div>
-  <h1>RSA <em>Flashcards</em></h1>
-  <p class="header-sub">40 cards covering concepts, equations, and security properties</p>
-  <div class="stats-bar">
-    <div>Total <span id="stat-total">40</span></div>
-    <div>Viewed <span id="stat-viewed">0</span></div>
-    <div>Score <span id="stat-score">0</span></div>
-    <div>To review <span id="stat-review">0</span></div>
-  </div>
-</header>
-
-<div class="controls">
-  <div class="filter-pills">
-    <button class="pill active" onclick="filter('all', this)">All (40)</button>
-    <button class="pill" onclick="filter('fundamentals', this)">Fundamentals</button>
-    <button class="pill" onclick="filter('math', this)">Math</button>
-    <button class="pill" onclick="filter('equations', this)">Equations</button>
-    <button class="pill" onclick="filter('keys', this)">Keys</button>
-    <button class="pill" onclick="filter('security', this)">Security</button>
-  </div>
-  <div class="right-controls">
-    <button class="ctrl-btn" onclick="shuffleCards()">Shuffle</button>
-    <button class="ctrl-btn" onclick="resetAll()">Reset all</button>
-    <button class="ctrl-btn" onclick="flipAll()">Flip all</button>
-  </div>
-</div>
-
-<div class="grid" id="grid"></div>
-
-<div class="review-section">
-  <div class="review-section-header">
-    <div class="review-section-title">
-      Review list
-      <span class="review-count-badge" id="review-count-badge">0 cards</span>
-    </div>
-    <div class="score-summary">
-      <span class="s-good">Good <span id="ss-good">0</span></span>
-      <span class="s-neut">Neutral <span id="ss-neut">0</span></span>
-      <span class="s-rev">Review <span id="ss-rev">0</span></span>
-      <span class="s-total">Score <span id="ss-total">0</span></span>
-    </div>
-  </div>
-  <div id="review-table-wrap">
-    <div class="review-empty" id="review-empty">No cards marked for review yet. Rate cards on the back to track your progress.</div>
-    <table class="review-table" id="review-table" style="display:none">
-      <thead>
-        <tr>
-          <th class="td-num">#</th>
-          <th>Question</th>
-          <th class="td-cat">Category</th>
-          <th class="td-score">Score</th>
-        </tr>
-      </thead>
-      <tbody id="review-tbody"></tbody>
-    </table>
-  </div>
-</div>
-
-<footer>Click any card to flip · RSA — Rivest–Shamir–Adleman, 1977</footer>
-
-<script>
-const cards = [
-  // FUNDAMENTALS (8)
-  { cat:'fundamentals', q:'What does RSA stand for?', a:'<span class="highlight">Rivest–Shamir–Adleman</span> — named after Ron Rivest, Adi Shamir, and Leonard Adleman who published the algorithm in 1977.' },
-  { cat:'fundamentals', q:'What type of cryptography is RSA?', a:'<span class="highlight">Asymmetric (public-key) cryptography.</span> It uses a key pair: a public key for encryption and a private key for decryption.' },
-  { cat:'fundamentals', q:'What mathematical problem is RSA security based on?', a:'The <span class="highlight">integer factorization problem</span> — it is computationally infeasible to factor a large semiprime n = p·q back into its prime factors.' },
-  { cat:'fundamentals', q:'What is a semiprime in RSA?', a:'A number <code>n = p·q</code> that is the product of exactly <span class="highlight">two large primes</span> p and q. The modulus n is always a semiprime.' },
-  { cat:'fundamentals', q:'What is the RSA modulus n?', a:'The public modulus <code>n = p·q</code>. It is shared publicly and used in both encryption and decryption. Typical sizes: <span class="highlight">2048 or 4096 bits</span>.' },
-  { cat:'fundamentals', q:'What is the purpose of the public key in RSA?', a:'To <span class="highlight">encrypt</span> a message. Anyone can encrypt using (n, e), but only the holder of the private key d can decrypt.' },
-  { cat:'fundamentals', q:'What is the purpose of the private key in RSA?', a:'To <span class="highlight">decrypt</span> ciphertext. The private key d is kept secret; it is the modular inverse of e with respect to φ(n).' },
-  { cat:'fundamentals', q:'Why must p and q be kept secret after key generation?', a:'Knowing p and q allows computing <code>φ(n) = (p−1)(q−1)</code>, from which the private key <span class="highlight">d can be derived</span>, breaking the encryption.' },
-  // MATH (10)
-  { cat:'math', q:'What is Euler\'s totient function φ(n)?', a:'φ(n) counts the <span class="highlight">integers from 1 to n that are coprime to n</span>. For RSA: <span class="eq">φ(n) = (p−1)(q−1)</span>' },
-  { cat:'math', q:'What is Euler\'s theorem and why does RSA use it?', a:'<span class="eq">M^φ(n) ≡ 1 (mod n)</span> for any M coprime to n. RSA uses this to guarantee that encrypt → decrypt returns the original message.' },
-  { cat:'math', q:'What does gcd(a, b) = 1 mean?', a:'a and b are <span class="highlight">coprime</span> (relatively prime) — they share no common factor other than 1. Required: <code>gcd(e, φ(n)) = 1</code>.' },
-  { cat:'math', q:'What is the Euclidean Algorithm?', a:'An efficient method to compute gcd(a, b) by repeated division:<span class="eq">gcd(a, b) = gcd(b, a mod b)</span>until remainder = 0.' },
-  { cat:'math', q:'What is the Extended Euclidean Algorithm (EEA)?', a:'Extends the Euclidean Algorithm to find integers s, t such that:<span class="eq">a·s + b·t = gcd(a, b)</span>Used to find the modular inverse d.' },
-  { cat:'math', q:'What is Bézout\'s Identity?', a:'For integers a, b with gcd(a,b)=g, there always exist integers s, t such that:<span class="eq">a·s + b·t = g</span>When g=1, s is the modular inverse of a.' },
-  { cat:'math', q:'What is modular arithmetic?', a:'Arithmetic on a "clock" of size n. <code>a mod n</code> is the remainder when a is divided by n. Example: <span class="highlight">81 mod 40 = 1</span> (since 81 = 2·40 + 1).' },
-  { cat:'math', q:'What is a modular inverse?', a:'d is the modular inverse of e (mod φ) if:<span class="eq">e·d ≡ 1 (mod φ)</span>It exists only when <span class="good">gcd(e, φ) = 1</span>.' },
-  { cat:'math', q:'What is Fermat\'s Little Theorem?', a:'If p is prime and gcd(a, p) = 1:<span class="eq">a^(p−1) ≡ 1 (mod p)</span>A special case of Euler\'s theorem when n is prime.' },
-  { cat:'math', q:'What is the Chinese Remainder Theorem (CRT) in RSA?', a:'CRT allows faster decryption by computing <code>M mod p</code> and <code>M mod q</code> separately, then combining. Gives a <span class="highlight">~4× speed improvement</span>.' },
-  // EQUATIONS (10)
-  { cat:'equations', q:'Write the RSA encryption equation.', a:'<span class="eq">C = M^e mod n</span>M = plaintext message, e = public exponent, n = modulus, C = ciphertext.' },
-  { cat:'equations', q:'Write the RSA decryption equation.', a:'<span class="eq">M = C^d mod n</span>C = ciphertext, d = private exponent, n = modulus, M = recovered plaintext.' },
-  { cat:'equations', q:'Write the key relationship between e and d.', a:'<span class="eq">e·d ≡ 1 (mod φ(n))</span>e and d are modular inverses of each other with respect to φ(n).' },
-  { cat:'equations', q:'Write the equation that defines φ(n) for RSA.', a:'<span class="eq">φ(n) = (p−1)(q−1)</span>Because n = p·q and p, q are distinct primes.' },
-  { cat:'equations', q:'Why does M = (M^e)^d mod n hold?', a:'Because <code>e·d = 1 + k·φ(n)</code>, so:<span class="eq">M^(e·d) = M^(1+kφ) = M·(M^φ)^k ≡ M·1 = M</span>by Euler\'s theorem.' },
-  { cat:'equations', q:'Write the EEA Bézout equation used to find d.', a:'<span class="eq">e·s + φ(n)·t = 1</span>Solved by the Extended Euclidean Algorithm. Then <code>d = s mod φ(n)</code>.' },
-  { cat:'equations', q:'How do you adjust a negative EEA result for d?', a:'If s &lt; 0, add φ(n) until positive:<span class="eq">d = (s mod φ(n) + φ(n)) mod φ(n)</span>Example: s = −13, φ = 40 → d = 27.' },
-  { cat:'equations', q:'Write the constraint on choosing e.', a:'<span class="eq">1 &lt; e &lt; φ(n)  and  gcd(e, φ(n)) = 1</span>e must be coprime to φ(n) so that a modular inverse d exists.' },
-  { cat:'equations', q:'What equation verifies that d is correct?', a:'<span class="eq">e · d mod φ(n) = 1</span>Example: 3 × 27 = 81, and 81 mod 40 = <span class="good">1 ✓</span>' },
-  { cat:'equations', q:'Write the RSA digital signature equation.', a:'Sign: <code>S = M^d mod n</code><br>Verify: <span class="eq">M = S^e mod n</span>The private key signs; the public key verifies.' },
-  // KEYS (6)
-  { cat:'keys', q:'What is a typical value for the public exponent e, and why?', a:'<span class="highlight">e = 65537</span> (= 2¹⁶ + 1) is most common. It is prime, coprime to most φ(n), and has a short binary form for fast exponentiation.' },
-  { cat:'keys', q:'What is the public key tuple in RSA?', a:'<span class="eq">(n, e)</span>n = modulus (product of two primes), e = public exponent. Both values are shared openly.' },
-  { cat:'keys', q:'What is the private key tuple in RSA?', a:'<span class="eq">(n, d)</span>d = private exponent, computed as the modular inverse of e mod φ(n). Keep d secret.' },
-  { cat:'keys', q:'What key sizes are considered secure today?', a:'<span class="highlight">2048-bit minimum</span> for general use; 3072 or 4096 bits for long-term security. 1024-bit keys are considered broken.' },
-  { cat:'keys', q:'What is key generation order in RSA?', a:'1. Choose primes p, q<br>2. Compute <code>n = p·q</code><br>3. Compute <code>φ(n)</code><br>4. Choose e<br>5. Compute <code>d = e⁻¹ mod φ(n)</code>' },
-  { cat:'keys', q:'What is Carmichael\'s totient λ(n) and how does it differ from φ(n)?', a:'<span class="eq">λ(n) = lcm(p−1, q−1)</span>It is often smaller than φ(n). Modern standards (PKCS#1 v2) prefer λ(n) as it produces smaller, equivalent keys.' },
-  // SECURITY (6)
-  { cat:'security', q:'What attack does RSA padding (OAEP) prevent?', a:'<span class="highlight">Chosen-ciphertext attacks</span> and textbook RSA weaknesses. Raw RSA is deterministic and malleable; OAEP adds randomness and integrity checking.' },
-  { cat:'security', q:'What is a timing attack on RSA?', a:'An attacker measures <span class="highlight">how long decryption takes</span> to infer bits of the private key d. Countermeasure: constant-time implementations or blinding.' },
-  { cat:'security', q:'What is RSA blinding?', a:'Before decryption, multiply ciphertext by a random value r: <code>C′ = C·r^e mod n</code>, decrypt, then divide by r. This <span class="highlight">masks timing information</span>.' },
-  { cat:'security', q:'Why is using the same n with different e values dangerous?', a:'If the same M is encrypted with two different exponents e₁ and e₂ sharing the same n, the <span class="highlight">common modulus attack</span> can recover M using the EEA.' },
-  { cat:'security', q:'What is a small exponent attack in RSA?', a:'If e is very small (e.g. e=3) and M is small, then M^e &lt; n and <code>C = M^e</code> without mod. Taking the e-th integer root of C directly reveals <span class="highlight">M</span>.' },
-  { cat:'security', q:'What makes RSA quantum-vulnerable?', a:"Shor's algorithm runs on a quantum computer and factors n in <span class='highlight'>polynomial time</span>, breaking RSA entirely. Post-quantum alternatives: lattice-based cryptography (CRYSTALS-Kyber)." },
-];
-
-// ratings: null | 'good' | 'neutral' | 'review'
-const ratings = new Array(cards.length).fill(null);
-let flippedCards = new Set();
-let currentFilter = 'all';
-
-const SCORE_MAP = { good: 1, neutral: 0, review: -1 };
-const LABEL_MAP = { good: '+1 Good', neutral: '0 Neutral', review: '−1 Review' };
-
-function buildGrid() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  cards.forEach((card, i) => {
-    const wrap = document.createElement('div');
-    wrap.className = `card-wrap cat-${card.cat}`;
-    wrap.dataset.cat = card.cat;
-    wrap.dataset.idx = i;
-    wrap.style.animationDelay = (i % 20) * 30 + 'ms';
-    if (flippedCards.has(i)) wrap.classList.add('flipped');
-    if (currentFilter !== 'all' && card.cat !== currentFilter) wrap.classList.add('hidden');
-
-    const r = ratings[i];
-    const badgeHtml = r ? `<span class="score-badge ${r}">${r === 'good' ? '+1' : r === 'neutral' ? '0' : '−1'}</span>` : '';
-
-    wrap.innerHTML = `
-      <div class="card-inner">
-        <div class="card-face card-front">
-          ${badgeHtml}
-          <div class="card-category">${card.cat}</div>
-          <div class="card-question">${card.q}</div>
-          <div class="card-hint">↓ tap to reveal answer</div>
-          <div class="card-number">#${String(i+1).padStart(2,'0')}</div>
+        <!-- Tab Navigation -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-topic="bigO" onclick="switchTopic('bigO')">
+                    <span class="material-icons">functions</span>
+                    Big O Notation
+                </button>
+                <button class="tab-btn" data-topic="eea" onclick="switchTopic('eea')">
+                    <span class="material-icons">calculate</span>
+                    Extended Euclidean
+                </button>
+                <button class="tab-btn" data-topic="mmi" onclick="switchTopic('mmi')">
+                    <span class="material-icons">key</span>
+                    Modular Inverse
+                </button>
+                <button class="tab-btn" data-topic="bases" onclick="switchTopic('bases')">
+                    <span class="material-icons">settings_input_component</span>
+                    Number Bases
+                </button>
+                <button class="tab-btn" data-topic="squaring" onclick="switchTopic('squaring')">
+                    <span class="material-icons">power</span>
+                    Successive Squaring
+                </button>
+            </div>
         </div>
-        <div class="card-face card-back">
-          <div class="card-category">Answer</div>
-          <div class="card-answer"><div>${card.a}</div></div>
-          <div class="flip-hint">↑ tap card to flip back</div>
-          <div class="rating-row">
-            <button class="rating-btn good ${r==='good'?'selected':''}"   onclick="rate(event,${i},'good')">+1 Good</button>
-            <button class="rating-btn neutral ${r==='neutral'?'selected':''}" onclick="rate(event,${i},'neutral')">0 Neutral</button>
-            <button class="rating-btn review ${r==='review'?'selected':''}"  onclick="rate(event,${i},'review')">−1 Review</button>
-          </div>
-          <div class="card-number">#${String(i+1).padStart(2,'0')}</div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
-      </div>`;
 
-    wrap.addEventListener('click', (e) => {
-      if (e.target.closest('.rating-btn')) return;
-      toggleCard(wrap, i);
-    });
-    grid.appendChild(wrap);
-  });
-  updateStats();
-  updateReviewTable();
-}
+        <!-- Info Bar -->
+        <div class="info-bar">
+            <span class="material-icons">info</span>
+            <span id="infoText">Click to flip cards • Spacebar to navigate</span>
+        </div>
 
-function toggleCard(wrap, i) {
-  wrap.classList.toggle('flipped');
-  if (wrap.classList.contains('flipped')) flippedCards.add(i);
-  else flippedCards.delete(i);
-  updateStats();
-}
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="flashcards-grid" id="flashcardsContainer">
+                <!-- Flashcards will be generated here -->
+            </div>
 
-function rate(e, i, rating) {
-  e.stopPropagation();
-  ratings[i] = rating;
-  // rebuild just this card's front badge and button states without full rebuild
-  const wrap = document.querySelector(`.card-wrap[data-idx="${i}"]`);
-  if (!wrap) return;
+            <!-- Navigation Controls -->
+            <div class="controls">
+                <button class="nav-btn prev-btn" onclick="previousCard()">
+                    <span class="material-icons">chevron_left</span>
+                    Back
+                </button>
+                <div class="card-counter">
+                    <span id="currentCard">0</span> / <span id="totalCardsNav">24</span>
+                </div>
+                <button class="nav-btn next-btn" onclick="nextCard()">
+                    Next
+                    <span class="material-icons">chevron_right</span>
+                </button>
+            </div>
+            
+            <!-- Exercises Section -->
+            <div class="exercises-section" id="exercisesSection">
+                <h2>Practice Exercises</h2>
+                <div class="exercises-grid" id="exercisesContainer">
+                    <!-- Exercises will be generated here -->
+                </div>
+            </div>
+            
+            <!-- EEA Example Panel -->
+            <div class="reference-section eea-example-section" id="eeaExampleSection" style="display: none;">
+                <h2>Step-by-Step Example: Finding Private Key d (RSA Context)</h2>
+                <p class="example-intro">Using the Extended Euclidean Algorithm to find the private exponent d in RSA</p>
+                
+                <div class="eea-example-container">
+                    <div class="eea-example-problem">
+                        <h3>Problem Setup</h3>
+                        <p><strong>Given RSA parameters:</strong></p>
+                        <p>$$p = 5, \quad q = 11$$</p>
+                        <p>$$e = 3 \text{ (public exponent)}$$</p>
+                        
+                        <p style="margin-top: 16px;"><strong>Calculate:</strong></p>
+                        <p>$$n = p \times q = 5 \times 11 = 55$$</p>
+                        <p>$$\varphi(n) = (p-1)(q-1) = 4 \times 10 = 40$$</p>
+                        
+                        <p style="margin-top: 16px;"><strong>Find:</strong></p>
+                        <p>$$d \text{ such that } e \cdot d \equiv 1 \pmod{\varphi(n)}$$</p>
+                        <p>$$3 \cdot d \equiv 1 \pmod{40}$$</p>
+                        
+                        <p style="margin-top: 16px; font-size: 13px; color: #666; padding: 12px; background-color: #f9f7ff; border-radius: 6px;">
+                            <strong>Variable Meanings:</strong><br>
+                            • $$p, q$$ = two distinct prime numbers<br>
+                            • $$n = pq$$ = RSA modulus<br>
+                            • $$\varphi(n)$$ = Euler's totient function<br>
+                            • $$e$$ = public exponent (must be coprime with $$\varphi(n)$$)<br>
+                            • $$d$$ = private exponent (multiplicative inverse of $$e$$)
+                        </p>
+                    </div>
 
-  // update badge on front
-  const front = wrap.querySelector('.card-front');
-  let badge = front.querySelector('.score-badge');
-  if (!badge) { badge = document.createElement('span'); front.appendChild(badge); }
-  badge.className = `score-badge ${rating}`;
-  badge.textContent = rating === 'good' ? '+1' : rating === 'neutral' ? '0' : '−1';
+                    <div class="eea-steps">
+                        <h3>Step 1: Forward Pass (Euclidean Algorithm)</h3>
+                        <div class="step-content">
+                            <div class="step-equation">
+                                <div>$$40 = 3 \times 13 + 1$$</div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                    $$q_1 = 13, \quad r_1 = 1$$<br>
+                                    $$\gcd(40, 3) = \gcd(3, 1)$$
+                                </div>
+                            </div>
+                            <div class="step-equation" style="margin-top: 12px;">
+                                <div>$$3 = 1 \times 3 + 0$$</div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                    Remainder is $$0$$, so $$\gcd(e, \varphi(n)) = 1$$ ✓<br>
+                                    (Inverse exists because gcd = 1)
+                                </div>
+                            </div>
+                        </div>
 
-  // update selected state on buttons
-  wrap.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
-  wrap.querySelector(`.rating-btn.${rating}`).classList.add('selected');
+                        <h3 style="margin-top: 24px;">Step 2: Backward Substitution</h3>
+                        <div class="step-content">
+                            <div class="step-equation">
+                                <div>$$1 = 40 - 3 \times 13$$</div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                    From Step 1, rearrange: $$1 = 40 - (3 \times 13)$$<br>
+                                    This means: $$1 = 1 \times 40 + (-13) \times 3$$
+                                </div>
+                            </div>
+                        </div>
 
-  updateStats();
-  updateReviewTable();
-}
+                        <h3 style="margin-top: 24px;">Step 3: Reduce Modulo</h3>
+                        <div class="step-content">
+                            <div class="step-equation">
+                                <div>$$(-13) \times 3 \equiv 1 \pmod{40}$$</div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                    From backward substitution
+                                </div>
+                            </div>
+                            <div class="step-equation" style="margin-top: 12px;">
+                                <div>$$d \equiv -13 \equiv 27 \pmod{40}$$</div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                    Since $$-13 + 40 = 27$$, we get positive: $$d = 27$$
+                                </div>
+                            </div>
+                        </div>
 
-function filter(cat, btn) {
-  currentFilter = cat;
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.card-wrap').forEach(c => {
-    if (cat === 'all' || c.dataset.cat === cat) c.classList.remove('hidden');
-    else c.classList.add('hidden');
-  });
-}
+                        <h3 style="margin-top: 24px;">Verification</h3>
+                        <div class="step-content">
+                            <div class="step-equation">
+                                <div>$$e \times d = 3 \times 27 = 81 = 2 \times 40 + 1 \equiv 1 \pmod{40}$$ ✓</div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #4caf50; font-weight: 600;">
+                                    Success! $$d = 27$$ is the correct private exponent
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Big O Reference Table -->
+            <div class="reference-section" id="referenceSection" style="display: none;">
+                <h2>Big O Complexity Reference</h2>
+                <div class="table-wrapper">
+                    <table class="complexity-table">
+                        <thead>
+                            <tr>
+                                <th>Common Scenario</th>
+                                <th>Complexity</th>
+                                <th>Explanation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Single simple operation</td>
+                                <td>$$O(1)$$</td>
+                                <td>Constant time: accessing array element, hash lookup</td>
+                            </tr>
+                            <tr>
+                                <td>Simple loop through array</td>
+                                <td>$$O(n)$$</td>
+                                <td>Linear: iterates each element once</td>
+                            </tr>
+                            <tr>
+                                <td>Nested loops (dependent)</td>
+                                <td>$$O(n^2)$$</td>
+                                <td>Quadratic: nested loops multiply the complexity</td>
+                            </tr>
+                            <tr>
+                                <td>Triple nested loops</td>
+                                <td>$$O(n^3)$$</td>
+                                <td>Cubic: three levels of nesting</td>
+                            </tr>
+                            <tr>
+                                <td>Binary search</td>
+                                <td>$$O(\log n)$$</td>
+                                <td>Logarithmic: divides problem in half each iteration</td>
+                            </tr>
+                            <tr>
+                                <td>Merge Sort</td>
+                                <td>$$O(n \log n)$$</td>
+                                <td>Linearithmic: log n levels, each doing n work</td>
+                            </tr>
+                            <tr>
+                                <td>Quick Sort (average)</td>
+                                <td>$$O(n \log n)$$</td>
+                                <td>Linearithmic: divide and conquer approach</td>
+                            </tr>
+                            <tr>
+                                <td>Bubble Sort</td>
+                                <td>$$O(n^2)$$</td>
+                                <td>Quadratic: compares adjacent elements repeatedly</td>
+                            </tr>
+                            <tr>
+                                <td>Recursive fibonacci</td>
+                                <td>$$O(2^n)$$</td>
+                                <td>Exponential: each call branches into 2 calls</td>
+                            </tr>
+                            <tr>
+                                <td>Generating permutations</td>
+                                <td>$$O(n!)$$</td>
+                                <td>Factorial: explores all possible arrangements</td>
+                            </tr>
+                            <tr>
+                                <td>Prime check (trial division)</td>
+                                <td>$$O(\sqrt{n})$$</td>
+                                <td>Square root: only check divisors up to √n</td>
+                            </tr>
+                            <tr>
+                                <td>Matrix multiplication (naive)</td>
+                                <td>$$O(n^3)$$</td>
+                                <td>Cubic: three nested loops over matrix dimensions</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
 
-function shuffleCards() {
-  const grid = document.getElementById('grid');
-  const items = [...grid.children];
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    grid.appendChild(items[j]);
-    items.splice(j, 1);
-  }
-}
-
-function resetAll() {
-  ratings.fill(null);
-  flippedCards.clear();
-  buildGrid();
-}
-
-function flipAll() {
-  const visible = document.querySelectorAll('.card-wrap:not(.hidden)');
-  const allFlipped = [...visible].every(c => c.classList.contains('flipped'));
-  visible.forEach(c => {
-    const i = parseInt(c.dataset.idx);
-    if (allFlipped) { c.classList.remove('flipped'); flippedCards.delete(i); }
-    else { c.classList.add('flipped'); flippedCards.add(i); }
-  });
-  updateStats();
-}
-
-function updateStats() {
-  const rated = ratings.filter(r => r !== null);
-  const score = rated.reduce((s, r) => s + SCORE_MAP[r], 0);
-  const reviewCount = ratings.filter(r => r === 'review').length;
-  document.getElementById('stat-total').textContent = cards.length;
-  document.getElementById('stat-viewed').textContent = rated.length;
-  document.getElementById('stat-score').textContent = (score > 0 ? '+' : '') + score;
-  document.getElementById('stat-review').textContent = reviewCount;
-}
-
-function updateReviewTable() {
-  const goodC   = ratings.filter(r => r === 'good').length;
-  const neutC   = ratings.filter(r => r === 'neutral').length;
-  const revC    = ratings.filter(r => r === 'review').length;
-  const total   = ratings.reduce((s, r) => r ? s + SCORE_MAP[r] : s, 0);
-
-  document.getElementById('ss-good').textContent  = goodC;
-  document.getElementById('ss-neut').textContent  = neutC;
-  document.getElementById('ss-rev').textContent   = revC;
-  document.getElementById('ss-total').textContent = (total > 0 ? '+' : '') + total;
-  document.getElementById('review-count-badge').textContent = revC + ' card' + (revC !== 1 ? 's' : '');
-
-  const reviewList = cards
-    .map((c, i) => ({ ...c, i }))
-    .filter(c => ratings[c.i] === 'review');
-
-  const empty = document.getElementById('review-empty');
-  const table = document.getElementById('review-table');
-  const tbody = document.getElementById('review-tbody');
-
-  if (reviewList.length === 0) {
-    empty.style.display = 'block';
-    table.style.display = 'none';
-    return;
-  }
-
-  empty.style.display = 'none';
-  table.style.display = 'table';
-  tbody.innerHTML = reviewList.map((c, row) => `
-    <tr>
-      <td class="td-num">${String(c.i + 1).padStart(2,'0')}</td>
-      <td>${c.q}</td>
-      <td class="td-cat"><span class="cat-pill ${c.cat}">${c.cat}</span></td>
-      <td class="td-score">−1</td>
-    </tr>`).join('');
-}
-
-buildGrid();
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
