@@ -111,6 +111,40 @@ const exercisesDataByTopic = {
     ],
 };
 
+// Topic Overview Data
+const topicOverviews = {
+    bigO: {
+        title: "Big O Notation",
+        icon: "functions",
+        text: "Big O Notation is a mathematical framework for analyzing algorithm efficiency by describing how runtime or space requirements grow with input size. From $$O(1)$$ constant time operations like array lookups to $$O(n!)$$ factorial complexities like permutation generation, understanding these classifications is essential. Common complexities progress as: $$O(1) < O(\\log n) < O(n) < O(n \\log n) < O(n^2) < O(n^3) < O(2^n) < O(n!)$$. Mastering Big O guides optimization decisions and separates performant solutions from slow ones."
+    },
+    eea: {
+        title: "Extended Euclidean Algorithm",
+        icon: "calculate",
+        text: "The Extended Euclidean Algorithm finds the greatest common divisor while computing Bézout coefficients. For integers $$a$$ and $$b$$, it solves: $$ax + by = \\gcd(a,b)$$. These coefficients enable solutions to linear Diophantine equations. Beyond pure mathematics, EEA is foundational for cryptography, particularly in computing modular multiplicative inverses needed for RSA encryption. Its recursive elegance with $$O(\\log \\min(a,b))$$ efficiency and deep connection to number theory make it indispensable in cryptographic applications."
+    },
+    mmi: {
+        title: "Modular Multiplicative Inverse",
+        icon: "key",
+        text: "The Modular Multiplicative Inverse of $$a$$ modulo $$m$$ is a number $$a^{-1}$$ satisfying: $$a \\cdot a^{-1} \\equiv 1 \\pmod{m}$$. This inverse exists if and only if $$\\gcd(a, m) = 1$$ (coprimality). Crucial for solving linear congruences of the form $$ax \\equiv b \\pmod{m}$$, it forms the backbone of RSA cryptography's encryption/decryption: $$C = M^e \\bmod n$$ and $$M = C^d \\bmod n$$. Whether computed via Extended Euclidean Algorithm or Fermat's Little Theorem $$a^{-1} \\equiv a^{p-2} \\pmod{p}$$, modular inverses enable secure digital communication."
+    },
+    bases: {
+        title: "Number Bases & Conversion",
+        icon: "settings_input_component",
+        text: "Number bases represent values using different radixes: binary (base 2), octal (base 8), decimal (base 10), and hexadecimal (base 16). The fundamental conversion formula is: $$N = \\sum_{i=0}^{n} d_i \\cdot b^i$$ where $$b$$ is the base and $$d_i$$ are digits. Converting decimal to base $$b$$ uses repeated division: divide by $$b$$ and collect remainders. Binary-to-hex conversion uses: $$4 \\text{ binary digits} = 1 \\text{ hex digit}$$. Mastering base conversion is essential for low-level programming, memory addressing, and understanding data representation."
+    },
+    squaring: {
+        title: "Successive Squaring (Binary Exponentiation)",
+        icon: "power",
+        text: "Successive Squaring computes $$a^n \\bmod m$$ in $$O(\\log n)$$ time instead of naive $$O(n)$$ multiplication. The algorithm converts exponent $$n$$ to binary and uses: $$a^n = a^{\\sum b_i 2^i} = \\prod_{b_i=1} a^{2^i}$$. This elegant technique enables computing $$a^{1000000} \\bmod m$$ in ~20 operations. Essential for RSA cryptography, it securely computes: $$C = M^e \\bmod n$$ for encryption. Binary exponentiation demonstrates how mathematical insight transforms computational complexity from impractical to lightning-fast."
+    },
+    bigoAnalysis: {
+        title: "Big O Analysis Reference",
+        icon: "trending_up",
+        text: "This comprehensive reference catalogs common algorithms and their complexities. The complexity hierarchy is: $$O(1) < O(\\log n) < O(n) < O(n \\log n) < O(n^2) < O(n^3) < O(2^n) < O(n!)$$. Key algorithms: binary search $$O(\\log n)$$, merge sort $$O(n \\log n)$$, bubble sort $$O(n^2)$$, matrix multiplication $$O(n^3)$$, and recursive Fibonacci $$O(2^n)$$. Use this reference when analyzing code, comparing algorithms, or predicting how code scales. Understanding these patterns helps make informed architecture and optimization decisions."
+    }
+};
+
 // Current active topic
 let currentTopic = 'bigO';
 
@@ -125,14 +159,26 @@ class StorageManager {
     initStorage() {
         const stored = this.getFromStorage();
         if (!stored) {
-            const initialData = {};
+            const initialData = {
+                score: 0,
+                scored: {}
+            };
             Object.keys(flashcardsDataByTopic).forEach(topic => {
                 initialData[topic] = {
                     viewed: [],
                     lastUpdated: new Date().toISOString()
                 };
+                initialData.scored[topic] = [];
             });
             this.saveToStorage(initialData);
+        } else if (!stored.score || !stored.scored) {
+            // Add score field to existing storage
+            stored.score = stored.score || 0;
+            stored.scored = stored.scored || {};
+            Object.keys(flashcardsDataByTopic).forEach(topic => {
+                stored.scored[topic] = [];
+            });
+            this.saveToStorage(stored);
         }
     }
 
@@ -166,15 +212,52 @@ class StorageManager {
         return data[topic] ? data[topic].viewed.length : 0;
     }
 
+    getScore() {
+        const data = this.getFromStorage();
+        return data && data.score !== undefined ? data.score : 0;
+    }
+
+    isCardScored(cardId, topic = currentTopic) {
+        const data = this.getFromStorage();
+        if (!data || !data.scored) return false;
+        return data.scored[topic] && data.scored[topic].includes(cardId);
+    }
+
+    markCardScored(cardId, topic = currentTopic) {
+        const data = this.getFromStorage();
+        if (!data) return false;
+        if (!data.scored) data.scored = {};
+        if (!data.scored[topic]) data.scored[topic] = [];
+        if (!data.scored[topic].includes(cardId)) {
+            data.scored[topic].push(cardId);
+            this.saveToStorage(data);
+            return true;
+        }
+        return false;
+    }
+
+    updateScore(delta) {
+        const data = this.getFromStorage();
+        if (!data) return;
+        data.score = (data.score || 0) + delta;
+        this.saveToStorage(data);
+        updateScoreDisplay();
+    }
+
     resetProgress() {
-        const initialData = {};
+        const initialData = {
+            score: 0,
+            scored: {}
+        };
         Object.keys(flashcardsDataByTopic).forEach(topic => {
             initialData[topic] = {
                 viewed: [],
                 lastUpdated: new Date().toISOString()
             };
+            initialData.scored[topic] = [];
         });
         this.saveToStorage(initialData);
+        updateScoreDisplay();
         this.deleteCookie();
     }
 
@@ -192,40 +275,133 @@ class StorageManager {
 const storageManager = new StorageManager();
 let currentCardIndex = 0;  // Track which card is currently displayed
 
+// Toggle Sidebar on Mobile
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+    }
+    if (overlay) {
+        overlay.classList.toggle('active');
+    }
+}
+
+// Close sidebar when a link is clicked
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (window.innerWidth <= 768) {
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+            }
+        });
+    });
+});
+
+// Render Topic Overview
+function renderTopicOverview(topic) {
+    const overview = topicOverviews[topic];
+    if (!overview) return;
+    
+    const overviewPanel = document.getElementById('topicOverview');
+    const overviewIcon = document.getElementById('overviewIcon');
+    const overviewTitle = document.getElementById('overviewTitle');
+    const overviewText = document.getElementById('overviewText');
+    
+    if (overviewIcon) {
+        overviewIcon.innerHTML = `<span class="material-icons">${overview.icon}</span>`;
+    }
+    if (overviewTitle) {
+        overviewTitle.textContent = overview.title;
+    }
+    if (overviewText) {
+        overviewText.innerHTML = overview.text;
+    }
+    
+    if (overviewPanel) {
+        // Hide for Big O Analysis as it has an iframe
+        if (topic === 'bigoAnalysis') {
+            overviewPanel.style.display = 'none';
+        } else {
+            overviewPanel.style.display = 'block';
+        }
+    }
+    
+    // Render MathJax for formulas in overview
+    if (window.MathJax) {
+        setTimeout(() => {
+            MathJax.typesetPromise().catch(err => console.log('MathJax error:', err));
+        }, 10);
+    }
+}
+
 // Switch topic
 function switchTopic(topic) {
     currentTopic = topic;
     currentCardIndex = 0;  // Reset to first card when switching topics
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.sidebar-link').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.querySelector(`[data-topic="${topic}"]`).classList.add('active');
+    document.querySelector(`.sidebar-link[data-topic="${topic}"]`).classList.add('active');
     
-    // Show/hide reference section for Big O only
+    // Render topic overview
+    renderTopicOverview(topic);
+    
+    // Get sections
+    const flashcardsContainer = document.getElementById('flashcardsContainer');
+    const controls = document.querySelector('.controls');
+    const exercisesSection = document.getElementById('exercisesSection');
     const refSection = document.getElementById('referenceSection');
+    const eeaExampleSection = document.getElementById('eeaExampleSection');
+    const bigoAnalysisSection = document.getElementById('bigoAnalysisSection');
+    const infoBar = document.querySelector('.info-bar');
+    const progressContainer = document.querySelector('.progress-container');
+    
+    // Reset all inline styles to let CSS handle display
+    if (flashcardsContainer) flashcardsContainer.style.display = '';
+    if (controls) controls.style.display = '';
+    if (exercisesSection) exercisesSection.style.display = '';
+    if (refSection) refSection.style.display = 'none';
+    if (eeaExampleSection) eeaExampleSection.style.display = 'none';
+    if (bigoAnalysisSection) bigoAnalysisSection.style.display = 'none';
+    if (infoBar) infoBar.style.display = '';
+    if (progressContainer) progressContainer.style.display = '';
+    
+    // Handle Big O Analysis tab
+    if (topic === 'bigoAnalysis') {
+        if (flashcardsContainer) flashcardsContainer.style.display = 'none';
+        if (controls) controls.style.display = 'none';
+        if (exercisesSection) exercisesSection.style.display = 'none';
+        if (infoBar) infoBar.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (bigoAnalysisSection) bigoAnalysisSection.style.display = 'block';
+        return;
+    }
+    
+    // Show reference section for Big O only
     if (topic === 'bigO') {
-        refSection.style.display = 'block';
+        if (refSection) refSection.style.display = 'block';
         // Render table formulas when showing
         if (window.MathJax) {
             setTimeout(() => {
                 MathJax.typesetPromise().catch(err => console.log('MathJax error:', err));
             }, 100);
         }
-    } else {
-        refSection.style.display = 'none';
     }
     
-    // Show/hide EEA example panel for EEA topic only
-    const eeaExampleSection = document.getElementById('eeaExampleSection');
+    // Show EEA example panel for EEA topic only
     if (topic === 'eea') {
-        eeaExampleSection.style.display = 'block';
+        if (eeaExampleSection) eeaExampleSection.style.display = 'block';
         if (window.MathJax) {
             setTimeout(() => {
                 MathJax.typesetPromise().catch(err => console.log('MathJax error:', err));
             }, 100);
         }
-    } else {
-        eeaExampleSection.style.display = 'none';
     }
     
     renderFlashcards();
@@ -237,6 +413,13 @@ function switchTopic(topic) {
 function renderFlashcards() {
     const container = document.getElementById('flashcardsContainer');
     const flashcards = flashcardsDataByTopic[currentTopic];
+    
+    // If no flashcards for this topic, return early
+    if (!flashcards || !Array.isArray(flashcards)) {
+        container.innerHTML = '';
+        return;
+    }
+    
     container.innerHTML = '';
 
     flashcards.forEach((card, index) => {
@@ -261,7 +444,11 @@ function createFlashcardElement(card, index, isViewed) {
     const div = document.createElement('div');
     div.className = `flashcard ${isViewed ? 'viewed' : ''}`;
     div.style.setProperty('--index', index);
-    div.onclick = (e) => toggleFlip(e.currentTarget, card.id);
+    div.onclick = (e) => {
+        if (!e.target.classList.contains('score-btn')) {
+            toggleFlip(e.currentTarget, card.id);
+        }
+    };
 
     div.innerHTML = `
         <div class="flashcard-inner">
@@ -276,9 +463,23 @@ function createFlashcardElement(card, index, isViewed) {
                 <div class="description">${escapeHtml(card.description)}</div>
                 <div class="formula">${card.formula}</div>
                 <div class="example"><strong>Example:</strong> ${escapeHtml(card.example)}</div>
+                <div class="score-buttons">
+                    <button class="score-btn easy-btn" onclick="handleScoreClick(event, ${card.id}, 1)">Easy</button>
+                    <button class="score-btn hard-btn" onclick="handleScoreClick(event, ${card.id}, -1)">Hard</button>
+                </div>
             </div>
         </div>
     `;
+
+    // Set disabled state after element is created
+    if (storageManager.isCardScored(card.id)) {
+        const buttons = div.querySelectorAll('.score-btn');
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        });
+    }
 
     return div;
 }
@@ -292,6 +493,39 @@ function toggleFlip(cardElement, cardId) {
             cardElement.classList.add('viewed');
         }
         updateProgress();
+    }
+}
+
+function handleScoreClick(event, cardId, delta) {
+    event.stopPropagation();
+    
+    // Check if card has already been scored
+    if (storageManager.isCardScored(cardId)) {
+        // Already scored, prevent duplicate
+        return;
+    }
+    
+    // Mark card as scored and update score
+    storageManager.markCardScored(cardId);
+    storageManager.updateScore(delta);
+    
+    // Disable both buttons for this card
+    const card = event.target.closest('.flashcard');
+    if (card) {
+        const buttons = card.querySelectorAll('.score-btn');
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        });
+    }
+}
+
+function updateScoreDisplay() {
+    const score = storageManager.getScore();
+    const scoreElement = document.getElementById('scoreValue');
+    if (scoreElement) {
+        scoreElement.textContent = score;
     }
 }
 
@@ -378,6 +612,12 @@ function resetProgress() {
         currentCardIndex = 0;  // Reset to first card
         document.querySelectorAll('.flashcard').forEach(card => {
             card.classList.remove('flipped', 'viewed', 'active');
+            // Re-enable score buttons
+            card.querySelectorAll('.score-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
         });
         // Mark first card as active
         const firstCard = document.querySelector('.flashcard');
@@ -417,6 +657,13 @@ document.addEventListener('keydown', (e) => {
 function renderExercises() {
     const container = document.getElementById('exercisesContainer');
     const exercises = exercisesDataByTopic[currentTopic];
+    
+    // If no exercises for this topic, return early
+    if (!exercises || !Array.isArray(exercises)) {
+        container.innerHTML = '';
+        return;
+    }
+    
     container.innerHTML = '';
 
     exercises.forEach((exercise) => {
@@ -475,8 +722,10 @@ function toggleExerciseExpand(exerciseElement) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    renderTopicOverview(currentTopic);
     renderFlashcards();
     renderExercises();
+    updateScoreDisplay();
     
     // Show reference section for Big O (default topic)
     const refSection = document.getElementById('referenceSection');

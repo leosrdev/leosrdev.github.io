@@ -28,6 +28,10 @@
                         <span id="viewedCount">0</span>/<span id="totalCards">24</span>
                     </div>
                     <div class="stat-item">
+                        <span class="material-icons">star</span>
+                        <span id="scoreValue">0</span>
+                    </div>
+                    <div class="stat-item">
                         <span class="material-icons">refresh</span>
                         <button class="reset-btn" onclick="resetProgress()">Reset</button>
                     </div>
@@ -35,31 +39,47 @@
             </div>
         </header>
 
-        <!-- Tab Navigation -->
-        <div class="tabs-container">
-            <div class="tabs">
-                <button class="tab-btn active" data-topic="bigO" onclick="switchTopic('bigO')">
-                    <span class="material-icons">functions</span>
-                    Big O Notation
-                </button>
-                <button class="tab-btn" data-topic="eea" onclick="switchTopic('eea')">
-                    <span class="material-icons">calculate</span>
-                    Extended Euclidean
-                </button>
-                <button class="tab-btn" data-topic="mmi" onclick="switchTopic('mmi')">
-                    <span class="material-icons">key</span>
-                    Modular Inverse
-                </button>
-                <button class="tab-btn" data-topic="bases" onclick="switchTopic('bases')">
-                    <span class="material-icons">settings_input_component</span>
-                    Number Bases
-                </button>
-                <button class="tab-btn" data-topic="squaring" onclick="switchTopic('squaring')">
-                    <span class="material-icons">power</span>
-                    Successive Squaring
+        <!-- Left Sidebar Navigation -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Topics</h2>
+                <button class="close-sidebar" onclick="toggleSidebar()">
+                    <span class="material-icons">close</span>
                 </button>
             </div>
-        </div>
+            <ul class="sidebar-menu">
+                <li><a class="sidebar-link active" data-topic="bigO" onclick="switchTopic('bigO')">
+                    <span class="material-icons">functions</span>
+                    <span>Big O Notation</span>
+                </a></li>
+                <li><a class="sidebar-link" data-topic="eea" onclick="switchTopic('eea')">
+                    <span class="material-icons">calculate</span>
+                    <span>Extended Euclidean</span>
+                </a></li>
+                <li><a class="sidebar-link" data-topic="mmi" onclick="switchTopic('mmi')">
+                    <span class="material-icons">key</span>
+                    <span>Modular Inverse</span>
+                </a></li>
+                <li><a class="sidebar-link" data-topic="bases" onclick="switchTopic('bases')">
+                    <span class="material-icons">settings_input_component</span>
+                    <span>Number Bases</span>
+                </a></li>
+                <li><a class="sidebar-link" data-topic="squaring" onclick="switchTopic('squaring')">
+                    <span class="material-icons">power</span>
+                    <span>Successive Squaring</span>
+                </a></li>
+                <li><a class="sidebar-link" data-topic="bigoAnalysis" onclick="switchTopic('bigoAnalysis')">
+                    <span class="material-icons">trending_up</span>
+                    <span>Big O Analysis</span>
+                </a></li>
+            </ul>
+        </nav>
+        
+        <!-- Hamburger Menu Button -->
+        <button class="hamburger-menu" id="hamburgerMenu" onclick="toggleSidebar()">
+            <span class="material-icons">menu</span>
+        </button>
 
         <!-- Progress Bar -->
         <div class="progress-container">
@@ -74,6 +94,17 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Topic Overview Panel -->
+            <div class="topic-overview" id="topicOverview">
+                <div class="overview-header">
+                    <div class="overview-icon" id="overviewIcon"></div>
+                    <div>
+                        <h2 class="overview-title" id="overviewTitle"></h2>
+                    </div>
+                </div>
+                <p class="overview-text" id="overviewText"></p>
+            </div>
+
             <div class="flashcards-grid" id="flashcardsContainer">
                 <!-- Flashcards will be generated here -->
             </div>
@@ -266,6 +297,11 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            
+            <!-- Big O Analysis Section -->
+            <div id="bigoAnalysisSection" style="display: none;">
+                <iframe src="bigO-analysis.html" class="bigo-iframe" style="width: 100%; height: 100vh; border: none; border-radius: 8px;"></iframe>
             </div>
         </main>
 
